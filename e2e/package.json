@@ -4,9 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test",
+    "showcase": "node ../scripts/make-showcase-gif.mjs"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.1"
+    "@playwright/test": "^1.61.1",
+    "gifenc": "^1.0.3",
+    "pngjs": "^7.0.0"
   }
 }
