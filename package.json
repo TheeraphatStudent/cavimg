@@ -1,0 +1,33 @@
+{
+  "name": "cavimg",
+  "version": "1.0.0",
+  "description": "An covering image for convert an image to canvas for un drag and harded copyable",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheeraphatStudent/cavimg.git"
+  },
+  "keywords": [
+    "image-to-canvas",
+    "canvas",
+    "image",
+    "image-protection",
+    "copy-protection",
+    "anti-copy",
+    "prevent-download",
+    "disable-right-click",
+    "no-drag",
+    "undraggable",
+    "image-security",
+    "browser"
+  ],
+  "author": "th33raphat",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TheeraphatStudent/cavimg/issues"
+  },
+  "homepage": "https://github.com/TheeraphatStudent/cavimg#readme"
+}
