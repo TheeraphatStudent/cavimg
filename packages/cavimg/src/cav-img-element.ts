@@ -18,6 +18,7 @@ export class CavImgElement extends HTMLElement {
   #unharden: (() => void) | null = null;
   #connected = false;
   #token = 0;
+  #pending = false;
 
   constructor() {
     super();
@@ -61,9 +62,12 @@ export class CavImgElement extends HTMLElement {
 
     const alt = this.getAttribute('alt');
     if (alt != null) this.setAttribute('aria-label', alt);
+    else this.removeAttribute('aria-label');
 
     if (this.#bitmap) {
       this.#redraw();
+    } else if (this.#pending) {
+      // A load started before connect is already in flight; it will render on resolve.
     } else if (this.#url) {
       this.#loadFrom(this.#url);
     } else {
@@ -94,6 +98,7 @@ export class CavImgElement extends HTMLElement {
 
   #loadFrom(url: string): void {
     this.#url = url;
+    this.#pending = true;
     const token = ++this.#token;
     loadImageBitmap(url)
       .then((bitmap) => {
@@ -101,6 +106,7 @@ export class CavImgElement extends HTMLElement {
           bitmap.close?.();
           return;
         }
+        this.#pending = false;
         this.#bitmap = bitmap;
         this.removeAttribute('src'); // scrub the URL from the DOM; #url still holds it
         this.style.aspectRatio = `${bitmap.width} / ${bitmap.height}`;
@@ -108,6 +114,8 @@ export class CavImgElement extends HTMLElement {
         this.dispatchEvent(new CustomEvent('cav-load'));
       })
       .catch(() => {
+        if (token !== this.#token) return; // superseded load failed — ignore
+        this.#pending = false;
         this.dispatchEvent(new CustomEvent('cav-error'));
       });
   }

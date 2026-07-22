@@ -80,4 +80,27 @@ describe('CavImgElement', () => {
     expect(bitmapCalls()).toBe(before);
     expect(el.shadowRoot?.querySelector('canvas')).toBeTruthy();
   });
+
+  it('does not refetch when src is configured before the element is connected', async () => {
+    const before = bitmapCalls();
+    const el = document.createElement('cav-img') as CavImgElement;
+    el.src = 'https://x/c.png'; // load starts while disconnected
+    document.body.append(el); // connectedCallback must NOT start a second load
+    await once(el, 'cav-load');
+    await tick();
+    expect(bitmapCalls() - before).toBe(1);
+  });
+
+  it('does not emit cav-error when a failed load has been superseded by a successful one', async () => {
+    const el = mount();
+    let errored = false;
+    el.addEventListener('cav-error', () => {
+      errored = true;
+    });
+    el.setAttribute('src', 'https://x/bad.png'); // load #1 will reject
+    el.setAttribute('src', 'https://x/good.png'); // load #2 supersedes and resolves
+    await once(el, 'cav-load');
+    await tick();
+    expect(errored).toBe(false);
+  });
 });
