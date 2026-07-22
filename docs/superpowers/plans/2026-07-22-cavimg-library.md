@@ -1140,3 +1140,16 @@ git commit -m "feat: add registration, renderToCanvas, and public exports"
 **Placeholder scan:** No TBD/TODO; every code step contains full code; every command has expected output.
 
 **Type consistency:** `computeFit(imgW,imgH,boxW,boxH,mode?)→FitRect`, `loadImageBitmap(url)→Promise<ImageBitmap>`, `drawBitmap(DrawParams)→void`, `harden(canvas)→()=>void`, `CavImgElement`, `defineCavImg(tag?)→void`, `renderToCanvas(canvas,url,opts?)→Promise<void>` — names/signatures match across the tasks that produce and consume them. Event names `cav-load`/`cav-error` consistent between Task 6 and its tests.
+
+---
+
+## Implementation deviations (recorded during execution)
+
+Corrections applied during subagent-driven execution; the shipped code is authoritative, not the reference blocks above.
+
+1. **Toolchain (Task 1):** `typescript` pinned to `^5.9.3`. `typescript@7.x` (native rewrite) crashes tsup's bundled `rollup-plugin-dts`; `6.x` errors on the deprecated `baseUrl` it injects. `5.9.3` is the last stable line that builds cleanly.
+2. **Element robustness (Task 6, fix commit `34f1d27`):** the reference `#loadFrom`/`connectedCallback` had two real defects, fixed with regression tests:
+   - The `.catch()` path lacked the stale-token guard, so a superseded-then-failed load fired a spurious `cav-error`. Added `if (token !== this.#token) return;` in `.catch()`.
+   - Setting `.src` before the element is appended started a load, then `connectedCallback` (seeing `#url` set but no bitmap) started a second — a duplicate fetch under the common "configure then append" pattern. Added a `#pending` flag; `connectedCallback` skips the redundant load while one is in flight.
+   - Minor: `connectedCallback` now clears a stale `aria-label` when `alt` is absent.
+3. **Task 7 Step 6 verification:** the bare-`node` dynamic-import check cannot run — `class CavImgElement extends HTMLElement` can't be evaluated in Node (no `HTMLElement` global). The module is browser-only by design (SSR handled via dynamic import per §8). Replaced with an export-surface check on the built `dist/index.d.ts` + IIFE `Cavimg` global; runtime correctness is covered by the happy-dom `index.test.ts`. **Plan 2 note:** if universal SSR-safe top-level import is wanted, guard the base class (`const Base = typeof HTMLElement !== 'undefined' ? HTMLElement : class{}`) — deferred, to be validated against the real Next.js example.
