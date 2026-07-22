@@ -1,0 +1,21 @@
+# syntax=docker/dockerfile:1
+
+# ---- build stage: static Go binary ----
+# Pin the exact patch to match the go.mod `go 1.26.3` directive (a lagging floating
+# tag would otherwise trigger a toolchain re-download at build).
+FROM golang:1.26.3-alpine AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/cavimg-mcp .
+
+# ---- runtime stage: node (for npm/pnpm/yarn) + the binary, non-root ----
+FROM node:22-alpine
+RUN corepack enable
+RUN addgroup -S app && adduser -S -G app -u 10001 app
+COPY --from=build /out/cavimg-mcp /usr/local/bin/cavimg-mcp
+USER app
+WORKDIR /workspace
+ENV CAVIMG_WORKSPACE_ROOT=/workspace
+ENTRYPOINT ["/usr/local/bin/cavimg-mcp"]

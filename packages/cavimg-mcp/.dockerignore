@@ -1,0 +1,6 @@
+cavimg-mcp
+cavimg-mcp.exe
+*.exe
+.git
+docs
+scripts/*.ps1
