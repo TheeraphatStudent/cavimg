@@ -1,6 +1,6 @@
 {
   "name": "cavimg",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An covering image: render an image to <canvas> to make it undraggable and harder to copy",
   "type": "module",
   "main": "./dist/index.js",
