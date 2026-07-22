@@ -1,0 +1,25 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+
+# framework build outputs (Plan 2)
+.next/
+examples/*/dist/
+playwright-report/
+test-results/
+
+# huge images — never commit raw/source assets
+e2e/**/fixtures/large/**
+*.psd
+*.tiff
+*.tif
+*.raw
+*.heic
+
+# keep committed comparison outputs
+!images/
+
+# pnpm store
+.pnpm-store

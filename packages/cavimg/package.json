@@ -1,0 +1,61 @@
+{
+  "name": "cavimg",
+  "version": "1.0.0",
+  "description": "An covering image: render an image to <canvas> to make it undraggable and harder to copy",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "unpkg": "./dist/index.global.js",
+  "jsdelivr": "./dist/index.global.js",
+  "sideEffects": [
+    "./dist/index.js",
+    "./dist/index.global.js"
+  ],
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "image-to-canvas",
+    "canvas",
+    "image",
+    "image-protection",
+    "copy-protection",
+    "anti-copy",
+    "prevent-download",
+    "disable-right-click",
+    "no-drag",
+    "undraggable",
+    "image-security",
+    "browser",
+    "web-component"
+  ],
+  "author": "th33raphat",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheeraphatStudent/cavimg.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TheeraphatStudent/cavimg/issues"
+  },
+  "homepage": "https://github.com/TheeraphatStudent/cavimg#readme",
+  "devDependencies": {
+    "happy-dom": "^20.11.1",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
+  }
+}
