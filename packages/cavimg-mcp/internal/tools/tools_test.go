@@ -68,6 +68,39 @@ func TestInstallHandlerDryRunDoesNotExecute(t *testing.T) {
 	}
 }
 
+func TestListHandlerFindsHits(t *testing.T) {
+	setupWorkspace(t, map[string]string{
+		"proj/index.html": "<h1>x</h1>\n<img src=\"a.png\">\n",
+	})
+	_, out, err := ListHandler(context.Background(), nil, ListInput{ProjectPath: "proj"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Count != 1 || len(out.Hits) != 1 {
+		t.Fatalf("want 1 hit, got count=%d hits=%d", out.Count, len(out.Hits))
+	}
+	if out.Hits[0].Kind != "img-tag" {
+		t.Errorf("kind = %q, want img-tag", out.Hits[0].Kind)
+	}
+}
+
+func TestListHandlerEmptyIsNonNilSlice(t *testing.T) {
+	setupWorkspace(t, map[string]string{
+		"proj/readme.md": "no images here",
+	})
+	_, out, err := ListHandler(context.Background(), nil, ListInput{ProjectPath: "proj"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The array must serialize as [] (not null) so the SDK output schema is happy.
+	if out.Hits == nil {
+		t.Error("Hits must be a non-nil empty slice")
+	}
+	if out.Count != 0 {
+		t.Errorf("count = %d, want 0", out.Count)
+	}
+}
+
 func TestApplyDryRunReturnsDiffWithoutWriting(t *testing.T) {
 	root := setupWorkspace(t, map[string]string{
 		"proj/package.json": `{"dependencies":{"react":"^18"},"devDependencies":{"vite":"^5"}}`,
