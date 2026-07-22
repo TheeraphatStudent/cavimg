@@ -1587,6 +1587,12 @@ func main() {
 Run: `go test ./... && go build -o cavimg-mcp .`
 Expected: all packages PASS; `cavimg-mcp` binary builds with no errors.
 
+Note: `go.mod` currently marks the SDK modules `// indirect`. A default `-mod=readonly`
+build tolerates stale `indirect` annotations, so this should just work. If the build
+*does* complain about the module graph, run `go mod tidy` once (all deps are already
+in the local cache — no network needed) and re-run; this is a one-time fixup, not a
+plan change.
+
 - [ ] **Step 5: Commit**
 
 ```bash
@@ -1709,7 +1715,9 @@ Create `Containerfile`:
 # syntax=docker/dockerfile:1
 
 # ---- build stage: static Go binary ----
-FROM golang:1.26-alpine AS build
+# Pin the exact patch to match the go.mod `go 1.26.3` directive (a lagging floating
+# tag would otherwise trigger a toolchain re-download at build).
+FROM golang:1.26.3-alpine AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
