@@ -1,0 +1,7 @@
+{
+  "app": "next",
+  "plainMs": 33,
+  "cavMs": 31,
+  "overheadMs": -2,
+  "heapBytes": 11900000
+}

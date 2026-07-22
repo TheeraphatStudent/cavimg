@@ -1,0 +1,6 @@
+{
+  "plainOuter": "<img data-test=\"plain\" alt=\"plain\" src=\"/fixture.png?v=plain\" style=\"display: block; width: 360px;\">",
+  "protectedOuter": "<cav-img data-test=\"protected\" alt=\"protected\" role=\"img\" aria-label=\"protected\" style=\"display: block; width: 360px; aspect-ratio: 1200 / 800;\"></cav-img>",
+  "protectedHasImg": false,
+  "protectedHasSrcAttr": false
+}
