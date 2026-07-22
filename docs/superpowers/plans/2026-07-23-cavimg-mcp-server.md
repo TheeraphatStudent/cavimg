@@ -2,6 +2,12 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Status: IMPLEMENTED (2026-07-23).** All nine tasks are complete and committed on
+> `feature/mcp-tools`. Two deviations were discovered during execution and shipped —
+> see **Execution deviations** at the end of this file. Acceptance criteria #1, #3,
+> and #4 were verified live against a real podman container; #2 is Codex-UI dependent
+> and documented in the README.
+
 **Goal:** Build a stdio MCP server (`cavimg-mcp`) exposing four tools — `detect_project`, `install_cavimg`, `list_image_usages`, `apply_cavimg` — that let an AI agent adopt the `cavimg` npm package into a frontend project, then containerize and verify it.
 
 **Architecture:** A thin `main.go` builds an `mcp.Server`, registers four typed tool handlers (`internal/tools`), and runs over stdio. Each handler validates its `project_path` through a shared path-confinement helper (`internal/workspace`), then delegates to a focused pure package: `internal/detect` (stack detection), `internal/scan` (image-usage grep), `internal/rewrite` (`<img>`→`<cav-img>` transform + wiring guidance), and `internal/textdiff` (unified diff). The typed `Out` struct becomes the structured JSON result; `CallToolResult.Content` carries a one-line human summary.
@@ -1913,3 +1919,60 @@ git commit -m "docs(mcp): add README with tool contracts, podman, and verificati
 **2. Placeholder scan:** no TBD/TODO; every code step contains complete code. The only intentional user-supplied token is the absolute volume path in the Codex snippet, explained in prose. ✓
 
 **3. Type consistency:** `detect.Result` fields ↔ `DetectOutput` copy in Task 6 match; `scan.Hit` reused directly in `ListOutput`; `rewrite.Transform(filename, content) (string, bool)` and `rewrite.Wiring(framework) ([]string, bool)` called with matching signatures in Task 6; `textdiff.Unified(path, old, new) string` called with three strings; `workspace.Confine(root, candidate)` used in Tasks 1 and 6 identically; handler signatures match the SDK `ToolHandlerFor` shape. ✓
+
+---
+
+## Execution deviations (discovered while implementing)
+
+Two things in the plan-as-written did not survive contact with the real SDK/runtime.
+Both were fixed; the shipped code differs from the Task 6/7 listings above as follows.
+
+**D1 — `main.go` treats client disconnect as a clean exit (not `log.Fatalf`).**
+On stdin EOF the SDK's `Server.Run` returns an error wrapping the internal jsonrpc2
+`ErrServerClosing` ("server is closing: EOF") — a *normal* shutdown for a per-session
+stdio server. The plan's `log.Fatalf` turned that into exit code 1, which (a) is wrong
+and (b) breaks any `set -e`/`pipefail` verification. The shipped `main.go` routes the
+Run error through an `isCleanShutdown(err)` helper: it returns 0 for `nil`,
+`errors.Is(err, io.EOF)`, `errors.Is(err, context.Canceled)`, or an error whose message
+contains `"server is closing"`/`"client is closing"` (the value lives in an internal
+package that cannot be imported, so its stable message is matched). Only genuine errors
+`log.Printf` + `os.Exit(1)`.
+
+**D2 — smoke scripts build the binary, hold stdin open, and force BOM-less UTF-8.**
+The plan's simple `printf ... | go run .` pipe fails for two reasons found at runtime:
+- **Flush race:** the SDK tears the connection down on read-EOF, which can beat the
+  flushing of in-flight responses; blasting the requests and immediately closing stdin
+  yields **zero** output. Real MCP clients keep stdin open for the whole session. The
+  shipped `smoke.sh` uses `{ printf …; sleep 1; } | ./cavimg-mcp` (build first, hold
+  open past flush). `smoke.ps1` uses a `System.Diagnostics.Process` with a
+  `Start-Sleep` before `StandardInput.Close()`.
+- **Windows BOM:** Windows PowerShell 5.1 prepends a UTF-8 BOM to a child's stdin,
+  which the JSON decoder rejects ("invalid character 'ï'"). `smoke.ps1` sets
+  `[Console]::InputEncoding = New-Object System.Text.UTF8Encoding($false)` before
+  starting the process. (`ProcessStartInfo.StandardInputEncoding` is not surfaced on
+  this host, and writing raw bytes to `BaseStream` did not suppress the preamble.)
+
+**Also observed (no code change needed):** MCP tool calls are dispatched
+**concurrently** by the SDK. A batched pipe that sends `apply(dry_run:false)` then
+`apply(dry_run:true)` back-to-back races on the same file; the responses can even
+return out of order. Idempotency was therefore verified with the write settled before
+the re-check (and is proven deterministically by `TestApplyIsIdempotent`). The README
+notes that agents should await each response before the next when order matters.
+
+**Verification actually performed on this machine (Windows + podman 5.6.2 WSL):**
+- `go test ./...` — all packages pass, including `TestApplyIsIdempotent` and the
+  dry-run-no-write test.
+- `bash scripts/smoke.sh` and `powershell -File scripts/smoke.ps1` — both print
+  `SMOKE OK`, exit 0.
+- `podman build` — image `localhost/cavimg-mcp:latest` built.
+- `podman run -i --rm cavimg-mcp` with piped `initialize`+`tools/list` — 3919 bytes,
+  all four tools listed (**acceptance #1, container level**).
+- `podman run … -v <scratch>:/workspace cavimg-mcp` against a scratch Vite+React app —
+  `detect_project` → `Vite+React`; `apply_cavimg` dry-run returned a 184-byte diff;
+  `apply_cavimg` `dry_run:false` rewrote `src/App.tsx` to `<cav-img … />`; a settled
+  re-run returned an empty diff (**acceptance #3 apply + #4**).
+- `install_cavimg` `dry_run:false` against a minimal app — ran `npm install cavimg`
+  (exit 0); `package.json` gained `"dependencies":{"cavimg":"^1.0.1"}` (**acceptance #3
+  install**).
+- **#2 (Codex lists the tools after config reload)** — not verified here; requires a
+  Codex install. The config snippet is in the README.
