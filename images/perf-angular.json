@@ -1,0 +1,7 @@
+{
+  "app": "angular",
+  "plainMs": 56,
+  "cavMs": 68,
+  "overheadMs": 11,
+  "heapBytes": 10000000
+}
