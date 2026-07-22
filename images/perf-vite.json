@@ -1,0 +1,7 @@
+{
+  "app": "vite",
+  "plainMs": 30,
+  "cavMs": 29,
+  "overheadMs": -1,
+  "heapBytes": 10000000
+}
