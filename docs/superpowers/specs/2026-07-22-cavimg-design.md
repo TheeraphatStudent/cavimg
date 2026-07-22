@@ -74,8 +74,12 @@ cavimg/
   sets `user-select: none` / `-webkit-user-drag: none` CSS.
 - **`cav-img-element.ts`** — `CavImgElement extends HTMLElement`; **open shadow
   root** holding one `<canvas>`; `observedAttributes = ['src','fit','alt']`;
-  sets `role="img"` + `aria-label` from `alt`; owns the cached `ImageBitmap` and
-  the `ResizeObserver`.
+  sets `role="img"` + `aria-label` from `alt`. Owns a private `#url` field, a
+  cached `ImageBitmap`, and the `ResizeObserver`. **Both `#url` and the bitmap
+  are retained across disconnect/reconnect** (the bitmap is not closed in
+  `disconnectedCallback`) so a DOM move — React reconciliation, route change,
+  list reorder — reconnects and redraws from the cache without a refetch. On
+  load it sets the host `style.aspectRatio` from the bitmap's natural size.
 - **`index.ts`** — idempotent `defineCavImg()`, auto-registers on import,
   re-exports `renderToCanvas` (functional escape hatch) + types.
 
@@ -85,22 +89,27 @@ cavimg/
 - **Attributes:** `src` (scrubbed from DOM after load), `fit = contain | cover |
   fill` (**default `contain`**), `alt` → `aria-label`.
 - **JS properties:** `el.src` (get/set), `el.fit`, and an `el.load(url)` alias —
-  attribute↔property reflection, mirroring native `<img>`. Lets security-conscious
-  devs set the URL purely in code so it never appears in markup.
+  attribute↔property reflection, mirroring native `<img>`. `get src` returns the
+  retained `#url` (honest read-back even after the attribute is scrubbed). Lets
+  security-conscious devs set the URL purely in code so it never appears in markup.
 - **Events:** `cav-load` on success, `cav-error` on load failure.
 - **Functional escape hatch:** `renderToCanvas(canvasEl, url, opts)`.
 
 ## 7. Data flow
 
-`src set` → `loader.load()` → decode to `ImageBitmap`, cache in a private field,
-**discard the URL string + remove the `src` attribute** → `render.draw()` →
+`src set` → `loader.load()` → decode to `ImageBitmap`, cache in the private
+`#bitmap` field, store the URL in the private `#url` field, **remove the `src`
+attribute from the DOM**, set host `aspect-ratio` → `render.draw()` →
 `protect.harden()` (once) → on `ResizeObserver` fire, `render.draw()` again
-**reusing the cached bitmap** (no refetch — the URL is never needed again).
-Load failure → `cav-error` event.
+**reusing the cached bitmap**. Disconnect keeps `#url` + `#bitmap`; reconnect
+redraws from the cache (no refetch). Load failure → `cav-error` event.
 
-**Key resolution:** "discard src but stay responsive" is satisfied by discarding
-the URL *string* while keeping the decoded *pixels* as an `ImageBitmap`. Redraws
-never need the URL.
+**Key resolution:** "hide the URL from the DOM inspector but stay responsive and
+survive remounts" is satisfied by removing the URL from the *DOM* (`src`
+attribute + no `<img>` tag) while retaining it in a non-enumerable private field
+plus the decoded pixels as an `ImageBitmap`. The URL is never in the DOM; redraws
+and reconnects never refetch. (Honest limit: the URL still lives in JS memory and
+the Network tab — consistent with the casual-deterrence scope.)
 
 ## 8. Framework integration
 
@@ -155,6 +164,12 @@ broad image glob is used).
 
 - Fit default: **`contain`**.
 - Shadow DOM: **open** (closed adds no real security, hurts a11y/testing).
+- Host sizing: `:host{display:block}` + `aspect-ratio` set from the bitmap's
+  natural size on load, so the element is responsive (fills its container's
+  width, height from ratio) instead of collapsing to the canvas default
+  300×150. Consumers can override with explicit CSS width/height.
+- URL handling: retained in a private `#url` field (not the DOM); attribute
+  scrubbed after load; bitmap + URL survive disconnect/reconnect.
 - Next.js example: **`useEffect` client-side registration**.
 - Responsiveness: **`ResizeObserver`** (not `window.resize`) + `devicePixelRatio`.
 - Packaging: **tsup** → ESM + IIFE global + types.
