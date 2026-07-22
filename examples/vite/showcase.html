@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cavimg — showcase</title>
+    <style>
+      html,body{margin:0;background:#0b1020;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,sans-serif}
+      #stage{position:relative;width:880px;height:360px;overflow:hidden;background:#0b1020;color:#e7ecf5}
+      .panels{display:flex;gap:24px;padding:20px}
+      .panel{flex:1;display:flex;flex-direction:column;gap:8px}
+      .panel h2{margin:0;font-size:14px;font-weight:600;letter-spacing:.3px}
+      .art{position:relative;width:100%;height:236px;border-radius:12px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+      .art img,.art cav-img{display:block;width:100%;height:236px}
+      .tag{font-size:12px;line-height:1.35;min-height:34px;padding:6px 10px;border-radius:8px}
+      .tag.bad{background:#3a1220;color:#ffb4c0;border:1px solid #7a2233}
+      .tag.good{background:#0f2e1e;color:#9be8bf;border:1px solid #1f6b45}
+      .tag.neutral{background:#141b30;color:#9aa6bf;border:1px solid #263149}
+      #cursor{position:absolute;width:22px;height:22px;pointer-events:none;transition:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));z-index:5}
+      #menu{position:absolute;z-index:6;background:#f7f8fb;color:#1b2130;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:12px;overflow:hidden;display:none}
+      #menu div{padding:7px 14px}
+      #menu div.hi{background:#dfe7fb}
+      #menu.blocked{text-decoration:line-through;opacity:.55}
+      #chip{position:absolute;z-index:6;display:none;background:#111;color:#fff;border:1px solid #333;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600}
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <div class="panels">
+        <div class="panel">
+          <h2>Plain &lt;img&gt;</h2>
+          <div class="art"><img id="plain" src="/showcase-art.svg" alt="art (plain img)" /></div>
+          <div class="tag neutral" id="tag-left">a normal image</div>
+        </div>
+        <div class="panel">
+          <h2>&lt;cav-img&gt;</h2>
+          <div class="art"><cav-img id="prot" src="/showcase-art.svg" alt="art (protected)"></cav-img></div>
+          <div class="tag neutral" id="tag-right">rendered to canvas</div>
+        </div>
+      </div>
+      <svg id="cursor" viewBox="0 0 24 24" fill="#fff" stroke="#111" stroke-width="1.2"><path d="M4 2 L4 20 L9 15 L12 22 L15 21 L12 14 L19 14 Z"/></svg>
+      <div id="menu"><div class="hi">Save image as…</div><div>Copy image</div><div>Open image in new tab</div></div>
+      <div id="chip">🚫 blocked</div>
+    </div>
+    <script type="module" src="/src/showcase.ts"></script>
+  </body>
+</html>
