@@ -103,4 +103,12 @@ describe('CavImgElement', () => {
     await tick();
     expect(errored).toBe(false);
   });
+
+  it('does not set the role attribute in the constructor (sets it on connect instead)', () => {
+    // A custom element constructor must not add attributes; role must be set on connect.
+    const el = document.createElement('cav-img') as CavImgElement;
+    expect(el.hasAttribute('role')).toBe(false);
+    document.body.append(el);
+    expect(el.getAttribute('role')).toBe('img');
+  });
 });

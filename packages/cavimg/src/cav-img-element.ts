@@ -27,7 +27,6 @@ export class CavImgElement extends HTMLElement {
     style.textContent = SHADOW_CSS;
     this.#canvas = document.createElement('canvas');
     root.append(style, this.#canvas);
-    this.setAttribute('role', 'img');
   }
 
   get src(): string | null {
@@ -56,6 +55,7 @@ export class CavImgElement extends HTMLElement {
 
   connectedCallback(): void {
     this.#connected = true;
+    this.setAttribute('role', 'img');
     this.#unharden = harden(this.#canvas);
     this.#ro = new ResizeObserver(() => this.#redraw());
     this.#ro.observe(this);
@@ -92,7 +92,8 @@ export class CavImgElement extends HTMLElement {
     } else if (name === 'fit') {
       this.#redraw();
     } else if (name === 'alt') {
-      this.setAttribute('aria-label', value ?? '');
+      if (value == null) this.removeAttribute('aria-label');
+      else this.setAttribute('aria-label', value);
     }
   }
 
